@@ -33,9 +33,16 @@ sudo systemctl enable --now snapshot-stream
 
 ## Usage
 
-- Stream URL: http://<pi-ip>:8080/stream
+- Stream URL: http://<pi-ip>:8080/stream <-- Your RBPi's IP or Tailscale
 
 - Custom port / fps / quality:
 ```bash
 python3 snapshot_stream.py --port 9090 --fps 15 --quality 50
+```
+
+Feel free to copy this repo and improve upon it!
+
+Buy me a coffee ☕
+```bash
+BTC: bc1qjsvtd3dd44llyu4rwz2ucl4kp9wd9kvpsj6tk5
 ```

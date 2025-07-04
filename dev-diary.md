@@ -1,7 +1,7 @@
 # 2025-07-04 RBPi3 Surveillance Setup
 
 ## Background  
-I had an old Raspberry Pi 3 B and a Logitech C920 USB webcam lying around, and wanted a cheap headless surveillance solution. Unfortunately, the Pi 3’s single USB-OTG bus (which it shares between the four USB ports and Ethernet/Wi-Fi) chokes when you try to push a high-bitrate H.264 or MJPEG RTSP stream in real time — even at modest resolutions like 320 × 240@10 fps the kernel logs would show `dwc2_hc_halt() channel can’t be halted` and the camera would disconnect entirely.
+I had an old Raspberry Pi 3 B and a Logitech C920 USB webcam lying around, and wanted a cheap headless surveillance solution. Unfortunately, the Pi 3’s single USB-OTG bus (which it shares between the four USB ports and Ethernet/Wi-Fi) chokes when you try to push a high-bitrate H.264 or MJPEG RTSP stream in real time — even at modest resolutions like 320 × 240@10 fps the kernel logs would show `dwc2_hc_halt() channel can’t be halted` and the camera would disconnect entirely (see ```sudo dmseg -w```).
 
 Watching the same device locally under Raspbian (via VLC’s “Capture Device”) worked fine in full-HD, so I realized that continuous streaming was the problem. Instead, I needed to:
 
@@ -15,7 +15,8 @@ Watching the same device locally under Raspbian (via VLC’s “Capture Device�
 - **Alternative OS (Ubuntu 24.04)** → same USB bus faults under load  
 - **Unplug peripherals** (headless) → no improvement  
 
-## Final Solution
+## Final Solution: Flask + OpenCV MJPEG Snapshots
+Approach: Instead of a continuous video stream, capture single JPEG frames at up to 25 fps and serve them as an MJPEG HTTP stream.
 
 Built a tiny **Flask + OpenCV** snapshot server:
 
@@ -27,16 +28,28 @@ Built a tiny **Flask + OpenCV** snapshot server:
 - **Systemd service** for auto-start, restart on failure, headless operation  
 - **Remote access** via Tailscale + SSH
 
-### Repo Layout
+Script: /usr/local/bin/snapshot_stream.py supports these CLI arguments:
+```
+--host: bind address (default 0.0.0.0)
 
-surveillance-pi/
+--port: HTTP port (default 8080)
+
+--fps: target frames per second (capped to avoid bus overload)
+
+--quality: JPEG quality (e.g. 30–50)
+
+snapshot_stream.py --host 0.0.0.0 --port 8080 --fps 25 --quality 30
+```
+
+### Repo Layout
+```
+rbpi3-surveillance/
 ├── snapshot_stream.py        # main Flask/OpenCV MJPEG streamer
 ├── requirements.txt          # Flask, opencv-python
 ├── snapshot-stream.service   # systemd unit (auto-restart, 1 sec delay)
 ├── README.md                 # install & usage instructions
 └── LICENSE                   # GNU GPL v3
-
-
+```
 
 ### Key Script Features
 
@@ -67,6 +80,35 @@ Logging for startup & frame-read failures
 Graceful shutdown on SIGINT/SIGTERM
 ```
 
+### Systemd Unit (snapshot-stream.service)
+
+Auto-restarts on failure with a 1 s delay
+
+Hardcodes default port 8080, but you can change it via ExecStart arguments or an EnvironmentFile
+
+```bash
+[Unit]
+Description=MJPEG Snapshot Streamer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/snapshot_stream.py \
+    --host 0.0.0.0 --port 8080 --fps 25 --quality 30
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Change to port 9090:
+```bash
+ExecStart=/usr/local/bin/snapshot_stream.py \
+    --host 0.0.0.0 --port 9090 --fps 25 --quality 30
+```
+
+
 ### Usage
 ```bash
 sudo apt update
@@ -80,24 +122,24 @@ sudo cp snapshot-stream.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now snapshot-stream
 ```
-Stream URL: http://192.168.1.50:8080/stream
+Stream URL: http://192.168.1.50:8080/stream <-- Your RBPi's IP or Tailscale
 
 Ingestors tested: VLC (desktop & mobile), QVR Pro (QNAP), web browsers
 
 ### Results
 
-    Stable 640 × 480 JPEG stream at 25 fps
+- Stable 640 × 480 JPEG stream at 25 fps
 
-    No USB bus panics under sustained load
+- No USB bus panics under sustained load
 
-    Low CPU usage (~10–15 %), no audio
+- Low CPU usage (~10–15 %), no audio
 
-    Headless + remote management via Tailscale/SSH
+- Headless + remote management via Tailscale/SSH
 
 ### Lessons learned:
 
-    When the USB-OTG bus can’t handle a real-time encode & transport pipeline, switch to a snapshot-based MJPEG server.
+When the USB-OTG bus can’t handle a real-time encode & transport pipeline, switch to a snapshot-based MJPEG server.
 
-    Simple HTTP multipart streams can be surprisingly robust on constrained hardware.
+Simple HTTP multipart streams can be surprisingly robust on constrained hardware.
 
-    A minimal Flask + OpenCV service is easier to tune & debug than full-blown RTSP or FFmpeg pipelines.
+A minimal Flask + OpenCV service is easier to tune & debug than full-blown RTSP or FFmpeg pipelines.

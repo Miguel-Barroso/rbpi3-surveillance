@@ -1,0 +1,13 @@
+[Unit]
+Description=MJPEG Snapshot Streamer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/snapshot_stream.py \
+    --host 0.0.0.0 --port 8080 --fps 25 --quality 30
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

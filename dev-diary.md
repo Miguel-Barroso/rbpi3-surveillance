@@ -68,16 +68,18 @@ Graceful shutdown on SIGINT/SIGTERM
 ```
 
 ### Usage
-
+```bash
 sudo apt update
 sudo apt install python3-opencv python3-flask
 pip3 install -r requirements.txt
+```
 
+```bash
 sudo cp snapshot_stream.py /usr/local/bin/
 sudo cp snapshot-stream.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now snapshot-stream
-
+```
 Stream URL: http://192.168.1.50:8080/stream
 
 Ingestors tested: VLC (desktop & mobile), QVR Pro (QNAP), web browsers

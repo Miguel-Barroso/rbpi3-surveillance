@@ -30,11 +30,12 @@ Built a tiny **Flask + OpenCV** snapshot server:
 ### Repo Layout
 
 surveillance-pi/
-├── snapshot_stream.py # main Flask/OpenCV MJPEG streamer
-├── requirements.txt # Flask, opencv-python
-├── snapshot-stream.service # systemd unit (auto-restart, 1 sec delay)
-├── README.md # install & usage instructions
-└── LICENSE # MIT (or Apache 2.0)
+├── snapshot_stream.py        # main Flask/OpenCV MJPEG streamer
+├── requirements.txt          # Flask, opencv-python
+├── snapshot-stream.service   # systemd unit (auto-restart, 1 sec delay)
+├── README.md                 # install & usage instructions
+└── LICENSE                   # GNU GPL v3
+
 
 
 ### Key Script Features
@@ -64,6 +65,7 @@ Args:
 Logging for startup & frame-read failures
 
 Graceful shutdown on SIGINT/SIGTERM
+```
 
 ### Usage
 

@@ -157,10 +157,51 @@ A minimal Flask + OpenCV service is easier to tune & debug than full-blown RTSP 
 
 ### 📡 SmokePing Monitoring Expansion
 - Expanded monitoring targets to include local infrastructure:
+  - Internet Connectivity
   - IP cameras
   - Orbi router and satellites
   - QNAP NAS and other key devices
+  Using ```sudo nano /etc/smokeping/config.d/Targets```
 - This helps visualize latency and availability across the home network, especially for critical nodes like the surveillance system and storage.
-- Added pretty host labels for better readability in the web UI.
+- Added pretty host labels for better readability in the web UI. 
+- Added specific meta tag for UTF-8 in the html template (may be overwritten during an update)
+- Saved Targets file backup to home folder
+
+NB1: You can check the configuration either using ```systemctl status smokeping``` or ```smokeping --check```
+NB2: The Targets file need variable declarations ontop and an example is as follows:
+```
+*** Targets ***
+
+probe = FPing
+menu = Top
+title = Smoke on the LAN
+
++ MeshNetwork
+menu = Orbi Mesh
+title = Orbi Mesh Network Devices
+
+++ RBR50
+menu = RBR50 Router
+title = RBR50 - Main Router (Ethernet, near MacMini)
+host = 192.168.1.1
+
+title = Engawa1 - Entrance Camera (2.4 GHz)
+host = 192.168.1.35
+
+++ Toilet1
+menu = Toilet1 - Cat Toilet
+title = Toilet1 - Cat Toilet (2.4 GHz)
+host = 192.168.1.34
+
+++ Kura1
+menu = Kura1 - Kura Camera
+title = Kura1 - Kura (2.4 GHz)
+host = 192.168.1.26
+
+++ RPi3
+menu = Raspberry Pi 3
+title = Raspberry Pi 3 Camera (2.4 GHz)
+host = 192.168.1.50
+```
 
 ---

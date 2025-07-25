@@ -143,3 +143,24 @@ When the USB-OTG bus can’t handle a real-time encode & transport pipeline, swi
 Simple HTTP multipart streams can be surprisingly robust on constrained hardware.
 
 A minimal Flask + OpenCV service is easier to tune & debug than full-blown RTSP or FFmpeg pipelines.
+
+## 2025-05-25 – AdGuard + SmokePing Update
+
+### 🔧 AdGuard DNS Configuration
+- Updated upstream DNS resolver to use **Cloudflare over HTTPS**:  
+  `https://cloudflare-dns.com/dns-query`
+- Set **bootstrap DNS** to `1.1.1.1` for reliable resolution of the DoH hostname.
+- This ensures encrypted DNS lookups with minimal external dependencies and avoids plaintext DNS leaks.
+- Saved a copy of the updated `AdGuardHome.yaml` to the home directory for backup and version control.
+- Set 192.168.1.19 as the only DNS resolver in the Orbi Router
+- Confirmed DNSSEC with ```dig +dnssec sigfail.verteiltesysteme.net @192.168.1.19```
+
+### 📡 SmokePing Monitoring Expansion
+- Expanded monitoring targets to include local infrastructure:
+  - IP cameras
+  - Orbi router and satellites
+  - QNAP NAS and other key devices
+- This helps visualize latency and availability across the home network, especially for critical nodes like the surveillance system and storage.
+- Added pretty host labels for better readability in the web UI.
+
+---

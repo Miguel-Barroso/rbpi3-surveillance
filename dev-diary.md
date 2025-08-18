@@ -143,3 +143,88 @@ When the USB-OTG bus can’t handle a real-time encode & transport pipeline, swi
 Simple HTTP multipart streams can be surprisingly robust on constrained hardware.
 
 A minimal Flask + OpenCV service is easier to tune & debug than full-blown RTSP or FFmpeg pipelines.
+
+# Update 2025-07-05: Simplified Workflow
+## Background
+
+Why reinvent the wheel when the solution already exists?
+I discovered that pure MJPEG frame capture and restreaming is a well-established approach. This is exactly how OctoPi manages to run smoothly on an RPi3 with a USB camera. It’s not “streaming” in the modern sense, but this is how webcams worked back in the day. Fun fact: one of the very first Internet use cases was watching a coffee pot drip!
+
+## MJPG-Streamer
+
+First, install the mjpeg-streamer-experimental fork, which works well with Raspberry Pi:
+
+```git clone https://github.com/jacksonliam/mjpg-streamer.git```
+
+You’ll also need the following libraries and cmake:
+
+```apt install -y git build-essential libjpeg-dev libv4l-dev cmake```
+
+Then build and install:
+
+```
+cd mjpg-streamer/mjpg-streamer-experimental
+make
+make install
+```
+
+Find your device ID (usually ```/dev/video0```). Then run mjpg_streamer to capture MJPEG frames. You can control the frame rate with ```-f``` and resolution with ```-r```.
+
+Example:
+```
+mjpg_streamer \
+  -i "input_uvc.so -d /dev/video0 -r 1280x720 -f 20 -q 80" \
+  -o "output_http.so -w /usr/local/share/mjpg-streamer/www -p 8080"
+```
+Make sure port ***8080*** is available.
+
+## Systemd Service
+
+Create ```/etc/systemd/system/mjpg-streamer.service```:
+
+```
+[Unit]
+Description=MJPG-Streamer webcam service
+After=network.target
+
+[Service]
+# Make sure we respawn on crash
+Restart=always
+RestartSec=1
+
+# Run as your mjpg-streamer user (replace 'pi' if different)
+User=********
+Group=********
+
+# Point to the installed binaries & plugins
+ExecStart=/usr/local/bin/mjpg_streamer \
+  -i "input_uvc.so -d /dev/video0 -r 1280x720 -f 20" \
+  -o "output_http.so -p 8080 -w /usr/local/share/mjpg-streamer/www -c admin:****************"
+
+# Log to journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then reload systemd and enable the service:
+
+```
+systemctl daemon-reload
+systemctl enable mjpg-streamer
+```
+
+Check status and logs:
+
+```systemctl status mjpg-streamer.service```
+
+If you make changes, restart the service:
+```systemctl restart mjpg-streamer```
+
+## Summary
+
+You now have a perpetually running service that captures JPEG frames from any webcam—even on low-powered devices like the Raspberry Pi 3—and serves them over the network. This simulates “modern” webcam streaming using simple, lightweight tools.
+
+In other words: you can do this today with hardware you already have—no need to buy a CCTV system!
